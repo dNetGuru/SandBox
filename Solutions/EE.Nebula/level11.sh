@@ -1,4 +1,5 @@
 # Solution by Farzad E. (me@dNetGuru.com)  / @dNetGuru
+
 cd
 export TEMP=/tmp
 ln -s `which getflag` g
