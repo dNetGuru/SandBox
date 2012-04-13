@@ -1,0 +1,1 @@
+`find / -type f \( -perm -4000 -o -perm -2000 \) -user flag00 -print 2> /dev/null`
