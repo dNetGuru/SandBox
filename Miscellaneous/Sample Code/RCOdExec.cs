@@ -5,7 +5,7 @@ using System.Threading;
 // Order of execution and Race Condition Example for Nebula Talk
 // Relased under MIT Licence
 
-// $Id: RCOdExec.cs,v 0.3.1 Wed 04/18/2012 0:29:32.12 dNetGuru  Exp $
+// $Id: RCOdExec.cs,v 0.4.2 Wed 04/18/2012 0:29:32.12 dNetGuru  Exp $
 
 
 
@@ -39,6 +39,7 @@ namespace SandBox
             resC = ((char)new Random((int)DateTime.Now.Ticks).Next(97, 123)).ToString(); // pick a random letter !
             Thread.Sleep(new Random((int)DateTime.Now.Ticks).Next(100)); // some time consuming job !!!
             Console.Write("R" + resC); // print the random letter !
+            Console.Write(resA);
             Console.Write("B");
         }
 
@@ -57,30 +58,67 @@ namespace SandBox
                 resA++;
             }
             Console.Write(resA);
+            Console.Write("Z");
+        }
 
+        static void sRCA()
+        {
+            Console.Write("A");
+            lock (resC)
+            {
+                resC = ((char)new Random((int)DateTime.Now.Ticks).Next(97, 123)).ToString(); // pick a random letter !
+                Thread.Sleep(new Random((int)DateTime.Now.Ticks).Next(100)); // some time consuming job !!!
+                Console.Write("R" + resC); // print the random letter !
+            }
+            Console.Write(resA);
+            Console.Write("B");
+        }
+
+        static void sRCB()
+        {
+            Console.Write("Y");
+            const string superSecretPasswd = "a";
+            lock (resC)
+            {
+                resC = "not-a"; // the user entered something but not "a" which is our passwd !
+                resB = new Random((int)DateTime.Now.Ticks).Next(100);
+                Console.Write("WI" + resB);
+                Thread.Sleep(resB); // some time consuming job !!!
+                Console.Write("WF" + resB);
+                if (resC == superSecretPasswd) // passwd check ! will always fail :( !
+                {
+                    Console.Write("\n ******** PASSWORD MATCH ********\n");
+                    resA++;
+                }
+            }
+            Console.Write(resA);
             Console.Write("Z");
         }
 
         static void Main()
         {
+            Console.WriteLine("Order of Execution / Race Condition / Locks Demo by Farzad E. (@dNetGuru)");
             while (true)
             {
                 var i = 0;
-                Console.Write("Which test to run ? [(R)ace Conditions / (O)rder of Exec / (RETN) to Exit] ");
-                var consoleKey = Console.ReadKey(false).Key;
-                if (consoleKey == ConsoleKey.Enter) return;
-                var tS = (consoleKey == ConsoleKey.R);
-                Console.Write("\nHow to Proceed ? [(A)sync/(S)ync] ");
-                var aS = (Console.ReadKey(false).Key == ConsoleKey.A);
+                Console.Write("> SELECT MODE FROM [(R)ace Conditions / (O)rder of Exec / (RETN) to Exit] ");
+                var mod = Console.ReadKey(false).Key;
+                if (mod == ConsoleKey.Enter) return;
+                Console.Write("\nHow to Proceed ? [(A)sync/(S)ync" + (mod == ConsoleKey.R ? "/Sa(f)e Async" : string.Empty) + "] ");
+                var type = Console.ReadKey(false).Key;
                 Console.Write("\n# of iterations : ");
                 if (!int.TryParse(Console.ReadLine(), out i)) continue;
-                if (aS)
+                if (type == ConsoleKey.A)
                 {
                     try
                     {
                         while (i > 0)
                         {
-                            if (tS) { new Thread(RCA).Start(); new Thread(RCB).Start(); }
+                            if (mod == ConsoleKey.R)
+                            {
+                                if (type == ConsoleKey.F) { new Thread(sRCA).Start(); new Thread(sRCB).Start(); }
+                                else { new Thread(RCA).Start(); new Thread(RCB).Start(); }
+                            }
                             else { new Thread(A).Start(); new Thread(B).Start(); }
                             i--;
                         }
@@ -92,7 +130,7 @@ namespace SandBox
                 {
                     while (i > 0)
                     {
-                        if (tS) { RCA(); RCB(); }
+                        if (mod == ConsoleKey.R) { RCA(); RCB(); }
                         else { A(); B(); }
                         i--;
                     }
